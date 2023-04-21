@@ -66,9 +66,16 @@ app.post("/reg", async (req, res) => {
   res.json({ id: id });
 });
 
-// app.post("/payment", (req, res) => {
-//   let data = req.body;
-//   res.json(data);
-// });
+app.post("/payment", async (req, res) => {
+  let data = req.body;
+  let id; /// Blagajnik registracija
+  try {
+    id = await auth.payment(data);
+    //res.status(201).send();
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+  res.json({ id: id });
+});
 
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));

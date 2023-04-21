@@ -141,4 +141,35 @@ export default {
       return res.status(401).send();
     }
   },
+
+  async payment(userData) {
+    let db = await connect();
+    let doc = {
+      chairs: userData.chairs,
+      date: userData.date,
+      gname: userData.gname,
+      gsurname: userData.gsurname,
+      roomnb: userData.roomnb,
+      cash: userData.cashState,
+      room: userData.roomState,
+    };
+
+    console.log(doc.room, doc.cash);
+    try {
+      result = await db.collection("naplata").insertOne(doc);
+      if (result && result.insertedId) {
+        return result.insertedId;
+      }
+    } catch (e) {
+      if (e.name == "MongoError" && e.code == 11000) {
+        throw new Error("Username already exists");
+      }
+    }
+    //   if (result && result.insertedCount == 1) {
+    //     return result.insertedId;
+    //   } else {
+    //     throw new Error("Cannot register user");
+    //   }
+    //
+  },
 };
