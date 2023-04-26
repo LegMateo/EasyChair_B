@@ -69,13 +69,30 @@ app.post("/reg", async (req, res) => {
 app.post("/payment", async (req, res) => {
   let data = req.body;
   let id; /// Blagajnik registracija
+
   try {
     id = await auth.payment(data);
-    //res.status(201).send();
+
+    res.json({ id: id });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(406).json({ error: e.message });
   }
-  res.json({ id: id });
+  // try {
+  //   id = await auth.payment(data);
+  //   //res.status(201).send();
+  // } catch (e) {
+  //   res.status(500).json({ error: e.message });
+  // }
+});
+
+app.get("/invoice/:id", async (req, res) => {
+  let id = req.params.id;
+
+  let db = await connect();
+
+  let doc = await db.collection("naplata").findOne({ _id: mongo.ObjectId(id) });
+
+  res.json(doc);
 });
 
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));
