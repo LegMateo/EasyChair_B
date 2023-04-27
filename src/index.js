@@ -2,13 +2,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
-import storage from "./memory_storage.js";
+
 import bodyParser from "body-parser";
 import connect from "./db.js";
 import mongo from "mongodb";
 import auth from "./auth.js";
 
 import cors from "cors";
+import payment from "./payment.js";
 
 const app = express(); // instanciranje aplikacije
 const port = 3000;
@@ -68,21 +69,16 @@ app.post("/reg", async (req, res) => {
 
 app.post("/payment", async (req, res) => {
   let data = req.body;
+
   let id; /// Blagajnik registracija
 
   try {
-    id = await auth.payment(data);
+    id = await payment.insert(data);
 
     res.json({ id: id });
   } catch (e) {
     res.status(406).json({ error: e.message });
   }
-  // try {
-  //   id = await auth.payment(data);
-  //   //res.status(201).send();
-  // } catch (e) {
-  //   res.status(500).json({ error: e.message });
-  // }
 });
 
 app.get("/invoice/:id", async (req, res) => {
