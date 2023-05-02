@@ -87,6 +87,7 @@ export default {
     return {
       beach: doc.beach,
       cashier: doc.cashier,
+      username: doc.username,
       chairs: chairs,
       parasol: doc.parasol,
       days: daysCount,
@@ -112,6 +113,7 @@ export default {
     let doc = {
       beach: userData.beach,
       cashier: userData.cashier,
+      username: userData.username,
       chairs: userData.chairs,
       parasol: userData.parasol,
       date: userData.date,
@@ -121,6 +123,8 @@ export default {
       cash: userData.cash,
     };
 
+    // console.log(doc);
+
     try {
       if (doc.cash == true && doc.chairs >= 2 && doc.date != "") {
         let convert = await this.convert(doc);
@@ -128,6 +132,7 @@ export default {
           {
             beach: convert.beach,
             cashier: convert.cashier,
+            username: convert.username,
             chairs: convert.chairs,
             parasol: convert.parasol,
             days: convert.days,

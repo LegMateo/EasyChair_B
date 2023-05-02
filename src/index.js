@@ -91,4 +91,42 @@ app.get("/invoice/:id", async (req, res) => {
   res.json(doc);
 });
 
+app.get("/admin", async (req, res) => {
+  let array = [];
+
+  let db = await connect();
+
+  let data = await db.collection("naplata").aggregate([
+    {
+      $group: {
+        _id: { name: "$cashier", username: "$username" },
+        sumChairs: { $sum: { $add: ["$chairs", "$extraChairs"] } },
+        total: { $sum: "$total" },
+        days: { $sum: "$days" },
+        one: { $sum: "$one" },
+        three: { $sum: "$three" },
+        seven: { $sum: "$seven" },
+      },
+    },
+  ]);
+
+  await data.forEach((doc) => {
+    array.push(doc);
+  });
+
+  res.json(array);
+});
+
+app.post("/admin", async (req, res) => {
+  let data = req.body;
+  let id;
+  try {
+    id = await auth.registerUserB(data);
+    res.json({ id: id });
+  } catch (e) {
+    console.error(e);
+    res.status(406).json({ error: e.message });
+  }
+});
+
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));
