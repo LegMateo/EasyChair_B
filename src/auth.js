@@ -18,7 +18,7 @@ export default {
       password: await bcrypt.hash(userData.password, 8),
     };
     try {
-      result = await db.collection("users").insertOne(doc);
+      result = await db.collection("admins").insertOne(doc);
       if (result && result.insertedId) {
         return result.insertedId;
       }
@@ -36,7 +36,7 @@ export default {
   },
   async autenticateUser(username, password) {
     let db = await connect();
-    let user = await db.collection("users").findOne({ username: username });
+    let user = await db.collection("admins").findOne({ username: username });
     if (
       user &&
       user.password &&
@@ -79,8 +79,9 @@ export default {
     let result;
     let doc = {
       username: userData.username,
-      name: userData.name,
-      surname: userData.surname,
+      name: userData.name.charAt(0).toUpperCase() + userData.name.slice(1),
+      surname:
+        userData.surname.charAt(0).toUpperCase() + userData.surname.slice(1),
       password: await bcrypt.hash(userData.password, 8),
     };
     try {
@@ -131,6 +132,77 @@ export default {
       };
     } else {
       throw new Error("Cannot authenticate");
+    }
+  },
+
+  async changeUserPassword(id, new_password) {
+    let db = await connect();
+    let user = await db
+      .collection("blagajnici")
+      .findOne({ _id: mongo.ObjectId(id) });
+
+    if (user) {
+      let new_password_hashed = await bcrypt.hash(new_password, 8);
+
+      let result = await db.collection("blagajnici").updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            password: new_password_hashed,
+          },
+        }
+      );
+
+      return result.modifiedCount == 1;
+    }
+  },
+
+  async changeUserUsername(id, new_username, old_username) {
+    let db = await connect();
+    let user = await db
+      .collection("blagajnici")
+      .findOne({ _id: mongo.ObjectId(id) });
+
+    let naplata = await db
+      .collection("blagajnici")
+      .find({ username: old_username });
+    try {
+      if (user && !naplata) {
+        let result = await db.collection("blagajnici").updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              username: new_username,
+            },
+          }
+        );
+
+        return result.modifiedCount == 1;
+      }
+
+      if (naplata && user) {
+        let result = await db.collection("blagajnici").updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              username: new_username,
+            },
+          }
+        );
+        await db.collection("naplata").updateMany(
+          { username: old_username },
+          {
+            $set: {
+              username: new_username,
+            },
+          }
+        );
+        return result.modifiedCount == 1;
+      }
+    } catch (e) {
+      if (e.name == "MongoServerError" && e.code == 11000) {
+        throw new Error("Username already exists");
+      }
     }
   },
 };

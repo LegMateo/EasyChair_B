@@ -55,18 +55,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post("/reg", async (req, res) => {
-  let user = req.body;
-  let id; /// Blagajnik registracija
-  try {
-    id = await auth.registerUserB(user);
-    //res.status(201).send();
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-  res.json({ id: id });
-});
-
 app.post("/payment", async (req, res) => {
   let data = req.body;
 
@@ -96,16 +84,71 @@ app.get("/admin", async (req, res) => {
 
   let db = await connect();
 
-  let data = await db.collection("naplata").aggregate([
+  let data = await db.collection("blagajnici").aggregate([
+    {
+      $lookup: {
+        from: "naplata",
+        let: { username: "$username" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$username", "$$username"] },
+            },
+          },
+          {
+            $group: {
+              _id: { name: "$cashier", username: "$username" },
+              sumChairs: { $sum: { $add: ["$chairs", "$extraChairs"] } },
+              total: { $sum: "$total" },
+              days: { $sum: "$days" },
+              one: { $sum: "$one" },
+              three: { $sum: "$three" },
+              seven: { $sum: "$seven" },
+            },
+          },
+        ],
+        as: "naplata",
+      },
+    },
+    {
+      $unwind: { path: "$naplata", preserveNullAndEmptyArrays: true },
+    },
     {
       $group: {
-        _id: { name: "$cashier", username: "$username" },
-        sumChairs: { $sum: { $add: ["$chairs", "$extraChairs"] } },
-        total: { $sum: "$total" },
-        days: { $sum: "$days" },
-        one: { $sum: "$one" },
-        three: { $sum: "$three" },
-        seven: { $sum: "$seven" },
+        _id: {
+          name: "$name",
+          surname: "$surname",
+          username: "$username",
+        },
+        sumChairs: {
+          $sum: {
+            $add: [
+              { $ifNull: ["$naplata.sumChairs", 0] },
+              { $ifNull: ["$extraChairs", 0] },
+            ],
+          },
+        },
+        total: {
+          $sum: { $ifNull: ["$naplata.total", 0] },
+        },
+        days: {
+          $sum: { $ifNull: ["$naplata.days", 0] },
+        },
+        one: {
+          $sum: { $ifNull: ["$naplata.one", 0] },
+        },
+        three: {
+          $sum: { $ifNull: ["$naplata.three", 0] },
+        },
+        seven: {
+          $sum: { $ifNull: ["$naplata.seven", 0] },
+        },
+        id: { $first: "$_id" },
+      },
+    },
+    {
+      $sort: {
+        id: -1,
       },
     },
   ]);
@@ -127,6 +170,52 @@ app.post("/admin", async (req, res) => {
     console.error(e);
     res.status(406).json({ error: e.message });
   }
+});
+
+app.patch("/admin", async (req, res) => {
+  let changes = req.body;
+
+  try {
+    if (changes.new_password && changes.new_password.length >= 3) {
+      let result = await auth.changeUserPassword(
+        changes.id,
+        changes.new_password
+      );
+      if (result) {
+        res.status(201).send();
+      } else {
+        res.status(500).json({ error: "Cannot change password" });
+      }
+    }
+    if (changes.new_username && changes.new_username.length >= 3) {
+      let result = await auth.changeUserUsername(
+        changes.id,
+        changes.new_username,
+        changes.old_username
+      );
+      if (result) {
+        res.status(201).send();
+      } else {
+        res.status(500).json({ error: "Cannot change username" });
+      }
+    } else {
+      res.status(400).json({ error: "Krivi upit" });
+    }
+  } catch (e) {
+    if (e.name == "MongoServerError" && e.code == 11000) {
+      throw new Error("Username already exists");
+    }
+  }
+});
+
+app.delete("/admin/:id", async (req, res) => {
+  let id = req.params;
+  let db = await connect();
+
+  if (id) {
+    await db.collection("blagajnici").deleteOne({ _id: mongo.ObjectId(id) });
+    res.status(201).send();
+  } else res.status(400).json({ error: "Id ne postoji" });
 });
 
 app.listen(port, () => console.log(`Slušam na portu ${port}!`));
