@@ -32,6 +32,8 @@ export default {
     }
     let daysCount = difference / (1000 * 3600 * 24) + 1;
 
+    let daysMili = new Date(doc.date[1]).getTime() + 86400000;
+
     // 1 set = 2 chairs & 1 unbrela
     // 1 set 1 day = 10euro
     // 1 set 3 days = 20euro
@@ -103,6 +105,7 @@ export default {
       time: time,
       cash: doc.cash,
       total: total,
+      daysMili: daysMili,
     };
   },
 
@@ -150,7 +153,19 @@ export default {
 
         id_ = result.insertedIds[0].toString();
 
-        return id_;
+        await db.collection("disabled").insertMany([
+          {
+            daysMili: convert.daysMili,
+            parasol: convert.parasol,
+            dateBegin: convert.dateBegin,
+            dateEnd: convert.dateEnd,
+            beach: convert.beach.replace(/\s+/g, ""),
+          },
+        ]);
+
+        return {
+          id_: id_,
+        };
       }
 
       if (
@@ -169,7 +184,22 @@ export default {
         let result = await db.collection("naplata").insertOne(convert);
 
         id_ = result.insertedId.toString();
-        return id_;
+
+        await db.collection("disabled").insertMany([
+          {
+            daysMili: convert.daysMili,
+            parasol: convert.parasol,
+            dateBegin: convert.dateBegin,
+            dateEnd: convert.dateEnd,
+            gname: convert.gname,
+            gsurname: convert.gsurname,
+            roomnb: convert.roomnb,
+            beach: convert.beach.replace(/\s+/g, ""),
+          },
+        ]);
+        return {
+          id_: id_,
+        };
       } else throw new Error("Some fields are empty!");
     } catch (e) {
       throw Error("Some fields are empty!");

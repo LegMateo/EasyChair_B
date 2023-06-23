@@ -42,6 +42,7 @@ export default {
       user.password &&
       (await bcrypt.compare(password, user.password))
     ) {
+      delete user.password;
       let token = jwt.sign(user, process.env.JWT_SECRET, {
         algorithm: "HS512",
         expiresIn: "1 week",
@@ -61,8 +62,7 @@ export default {
       let token = authorization[1];
 
       if (type !== "Bearer") {
-        res.status(401).send();
-        return false;
+        return res.status(401).send();
       } else {
         req.jwt = jwt.verify(token, process.env.JWT_SECRET);
         return next();
@@ -119,6 +119,7 @@ export default {
       user.password &&
       (await bcrypt.compare(password, user.password))
     ) {
+      delete user.password;
       let token = jwt.sign(user, process.env.JWT_SECRET, {
         algorithm: "HS512",
         expiresIn: "1 week",
