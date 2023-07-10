@@ -13,7 +13,7 @@ import payment from "./payment.js";
 import disable from "./disable.js";
 
 const app = express(); // instanciranje aplikacije
-const port = process.env.PORT || 3030;
+const port = process.env.PORT;
 
 app.use(cors());
 app.use(express.json());

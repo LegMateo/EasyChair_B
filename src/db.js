@@ -1,8 +1,7 @@
 // src/db.js
 import { MongoClient, ServerApiVersion } from "mongodb";
-const uri =
-  "mongodb+srv://mateo:0@chairpayment.idsiblr.mongodb.net/?retryWrites=true&w=majority";
-const client = new MongoClient(uri, {
+let connection_string = process.env.CONNECTION_STRING;
+const client = new MongoClient(connection_string, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
